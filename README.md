@@ -3,6 +3,15 @@ gen-files
 
 code generator that uses template files to create a code skeleton 
 
+### install 
+if you have [go](golang.org/dl) installed:
+```
+$ go get -u -v github.com/advincze/gen-files
+```
+you'll find `gen-files` in `$GOPATH/bin/gen-files`
+
+### use
+
 ```
 $ gen-files
 
