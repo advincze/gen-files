@@ -64,7 +64,7 @@ func generateFiles(index index, config interface{}, indexDir, toDir string) erro
 		switch {
 		case mapping.Before != "":
 			//insert snippet into file
-			renderedSnippet, err := tmplFileToString(mapping.Template, config)
+			renderedSnippet, err := tmplFileToString(filepath.Join(indexDir, mapping.Template), config)
 			if err != nil {
 				return fmt.Errorf("Error in file mapping: %v", err)
 			}
@@ -88,13 +88,14 @@ func insertBefore(target, pattern string, snippet string) error {
 	if err != nil {
 		panic(err)
 	}
-	var buf bytes.Buffer
+
 	f, err := os.Open(target)
 	if err != nil {
 		return fmt.Errorf("could not open taget file %s: %v", target, err)
 	}
 	defer f.Close()
 
+	var buf bytes.Buffer
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Bytes()
