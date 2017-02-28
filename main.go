@@ -200,7 +200,7 @@ type index struct {
 }
 
 type fileMapping struct {
-	Template string `json:"template"`
+	Template string `json:"from"`
 	Target   string `json:"to"`
 	Before   string `json:"before"`
 }
