@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"text/template"
 )
 
@@ -128,6 +128,7 @@ func tmplFileToString(tmplFile string, data interface{}) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parsing template %s: %v", tmplFile, err)
 	}
+	tmpl.Funcs(funcMap)
 	err = tmpl.Execute(&buf, data)
 	if err != nil {
 		return "", fmt.Errorf("executing template %s: %v", tmplFile, err)
@@ -150,17 +151,18 @@ func tmplFileToFile(tmplFile, target string, data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("parsing template %s: %v", tmplFile, err)
 	}
+	tmpl.Funcs(funcMap)
 	return tmpl.Execute(f, data)
 }
 
 func tmplToString(textTemplate string, data interface{}) (string, error) {
-	tmpl := template.New("")
-	t, err := tmpl.Parse(textTemplate)
+	tmpl, err := template.New("").Parse(textTemplate)
 	if err != nil {
 		return "", fmt.Errorf("parsing template %q: %v", textTemplate, err)
 	}
+	tmpl.Funcs(funcMap)
 	var buf bytes.Buffer
-	err = t.Execute(&buf, data)
+	err = tmpl.Execute(&buf, data)
 	if err != nil {
 		return "", fmt.Errorf("executing template %q with data %v: %v", textTemplate, data, err)
 	}
@@ -204,4 +206,99 @@ type fileMapping struct {
 	Template string `json:"from"`
 	Target   string `json:"to"`
 	Before   string `json:"before"`
+}
+
+var funcMap = template.FuncMap{
+	"camelCase":    camelCase,
+	"snakeCase":    snakeCase,
+	"dashCase":     dashCase,
+	"dotCase":      dotCase,
+	"pathCase":     pathCase,
+	"properCase":   properCase,
+	"constantCase": constantCase,
+}
+
+func camelCase(src []string) string {
+	var buf bytes.Buffer
+	if len(src) == 0 {
+		return ""
+	}
+	buf.WriteString(strings.ToLower(src[0]))
+	for i := 1; i < len(src); i++ {
+		runes := []rune(src[i])
+		if len(runes) == 0 {
+			continue
+		}
+		firstLetter := string([]rune{runes[0]})
+		buf.WriteString(strings.ToTitle(firstLetter) + string(runes[1:]))
+	}
+	return buf.String()
+}
+
+func snakeCase(src []string) string {
+	var buf bytes.Buffer
+	for i, s := range src {
+		if i > 0 && len(s) > 0 {
+			buf.WriteByte('_')
+		}
+		buf.WriteString(strings.ToLower(s))
+	}
+	return buf.String()
+}
+
+func dashCase(src []string) string {
+	var buf bytes.Buffer
+	for i, s := range src {
+		if i > 0 && len(s) > 0 {
+			buf.WriteByte('-')
+		}
+		buf.WriteString(strings.ToLower(s))
+	}
+	return buf.String()
+}
+
+func dotCase(src []string) string {
+	var buf bytes.Buffer
+	for i, s := range src {
+		if i > 0 && len(s) > 0 {
+			buf.WriteByte('.')
+		}
+		buf.WriteString(strings.ToLower(s))
+	}
+	return buf.String()
+}
+
+func pathCase(src []string) string {
+	var buf bytes.Buffer
+	for i, s := range src {
+		if i > 0 && len(s) > 0 {
+			buf.WriteByte('/')
+		}
+		buf.WriteString(strings.ToLower(s))
+	}
+	return buf.String()
+}
+
+func properCase(src []string) string {
+	var buf bytes.Buffer
+	for i := 0; i < len(src); i++ {
+		runes := []rune(src[i])
+		if len(runes) == 0 {
+			continue
+		}
+		firstLetter := string([]rune{runes[0]})
+		buf.WriteString(strings.ToTitle(firstLetter) + string(runes[1:]))
+	}
+	return buf.String()
+}
+
+func constantCase(src []string) string {
+	var buf bytes.Buffer
+	for i, s := range src {
+		if i > 0 && len(s) > 0 {
+			buf.WriteByte('_')
+		}
+		buf.WriteString(strings.ToTitle(s))
+	}
+	return buf.String()
 }
