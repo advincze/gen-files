@@ -124,12 +124,11 @@ func insertBefore(target, pattern string, snippet string) error {
 
 func tmplFileToString(tmplFile string, data interface{}) (string, error) {
 	var buf bytes.Buffer
-	tmpl, err := template.ParseFiles(tmplFile)
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(tmplFile)
 	if err != nil {
 		return "", fmt.Errorf("parsing template %s: %v", tmplFile, err)
 	}
-	tmpl.Funcs(funcMap)
-	err = tmpl.Execute(&buf, data)
+	err = tmpl.Templates()[0].Execute(&buf, data)
 	if err != nil {
 		return "", fmt.Errorf("executing template %s: %v", tmplFile, err)
 	}
@@ -147,22 +146,22 @@ func tmplFileToFile(tmplFile, target string, data interface{}) error {
 		return fmt.Errorf("creating target file %q:%v", target, err)
 	}
 	defer f.Close()
-	tmpl, err := template.ParseFiles(tmplFile)
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(tmplFile)
 	if err != nil {
 		return fmt.Errorf("parsing template %s: %v", tmplFile, err)
 	}
-	tmpl.Funcs(funcMap)
-	return tmpl.Execute(f, data)
+
+	return tmpl.Templates()[0].Execute(f, data)
 }
 
 func tmplToString(textTemplate string, data interface{}) (string, error) {
-	tmpl, err := template.New("").Parse(textTemplate)
+	tmpl, err := template.New("").Funcs(funcMap).Parse(textTemplate)
 	if err != nil {
 		return "", fmt.Errorf("parsing template %q: %v", textTemplate, err)
 	}
-	tmpl.Funcs(funcMap)
+
 	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, data)
+	err = tmpl.Templates()[0].Execute(&buf, data)
 	if err != nil {
 		return "", fmt.Errorf("executing template %q with data %v: %v", textTemplate, data, err)
 	}
@@ -218,7 +217,18 @@ var funcMap = template.FuncMap{
 	"constantCase": constantCase,
 }
 
-func camelCase(src []string) string {
+func toStringSlice(src []interface{}) []string {
+	ss := make([]string, 0, len(src))
+	for _, s := range src {
+		if str, ok := s.(string); ok {
+			ss = append(ss, str)
+		}
+	}
+	return ss
+}
+
+func camelCase(isrc []interface{}) string {
+	src := toStringSlice(isrc)
 	var buf bytes.Buffer
 	if len(src) == 0 {
 		return ""
@@ -235,7 +245,8 @@ func camelCase(src []string) string {
 	return buf.String()
 }
 
-func snakeCase(src []string) string {
+func snakeCase(isrc []interface{}) string {
+	src := toStringSlice(isrc)
 	var buf bytes.Buffer
 	for i, s := range src {
 		if i > 0 && len(s) > 0 {
@@ -246,7 +257,8 @@ func snakeCase(src []string) string {
 	return buf.String()
 }
 
-func dashCase(src []string) string {
+func dashCase(isrc []interface{}) string {
+	src := toStringSlice(isrc)
 	var buf bytes.Buffer
 	for i, s := range src {
 		if i > 0 && len(s) > 0 {
@@ -257,7 +269,8 @@ func dashCase(src []string) string {
 	return buf.String()
 }
 
-func dotCase(src []string) string {
+func dotCase(isrc []interface{}) string {
+	src := toStringSlice(isrc)
 	var buf bytes.Buffer
 	for i, s := range src {
 		if i > 0 && len(s) > 0 {
@@ -268,7 +281,8 @@ func dotCase(src []string) string {
 	return buf.String()
 }
 
-func pathCase(src []string) string {
+func pathCase(isrc []interface{}) string {
+	src := toStringSlice(isrc)
 	var buf bytes.Buffer
 	for i, s := range src {
 		if i > 0 && len(s) > 0 {
@@ -279,7 +293,8 @@ func pathCase(src []string) string {
 	return buf.String()
 }
 
-func properCase(src []string) string {
+func properCase(isrc []interface{}) string {
+	src := toStringSlice(isrc)
 	var buf bytes.Buffer
 	for i := 0; i < len(src); i++ {
 		runes := []rune(src[i])
@@ -292,7 +307,8 @@ func properCase(src []string) string {
 	return buf.String()
 }
 
-func constantCase(src []string) string {
+func constantCase(isrc []interface{}) string {
+	src := toStringSlice(isrc)
 	var buf bytes.Buffer
 	for i, s := range src {
 		if i > 0 && len(s) > 0 {
